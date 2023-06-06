@@ -19,12 +19,22 @@ public class IdentityGeneratorImpl implements IdentifierGenerator, Configurable 
         String currentDate = simpleDateFormat.format(Date.from(Instant.now()));
 
         String query = String.format("select %s from %s where id like \"%s%%\"",
-                session.getEntityPersister(obj.getClass().getName(), obj)
-                        .getIdentifierPropertyName(),
+                session.getEntityPersister(obj.getClass().getName(), obj).getIdentifierPropertyName(),
                 obj.getClass().getSimpleName(),
-                currentDate); //выборка всех сохраненных сущностей сегодня
-        Stream<String> ids = session.createQuery(query, String.class).stream();
+                currentDate); //выборка всех сохраненных сущностей за сегодня
+        Stream<String> todayIds = session.createQuery(query, String.class).stream();
 
+        return buildTicketName(currentDate, todayIds);
+    }
+
+    /**
+     * После тикета с номером "yyyy-MM-dd-9999" отсчет идет заново с "yyyy-MM-dd-0000".
+     *
+     * @param currentDate - Текущая дата в формате "yyyy-MM-dd-".
+     * @param ids         - Стрим уже сохраненных айдишников в бд за сегодня, в формате "yyyy-MM-dd-XXXX".
+     * @return Номер следующего тикета.
+     */
+    protected String buildTicketName(String currentDate, Stream<String> ids) {
         Long max = ids
                 .map(id -> id.replace(currentDate, ""))
                 .mapToLong(Long::parseLong)

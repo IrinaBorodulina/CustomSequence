@@ -1,9 +1,7 @@
 package com.xdemo.sequence.entity;
 
-import com.xdemo.sequence.generator.IdentityGeneratorImpl;
 import jakarta.persistence.*;
 import org.hibernate.annotations.GenericGenerator;
-import org.hibernate.annotations.Parameter;
 
 @Entity
 @Table(name = "tickets")
