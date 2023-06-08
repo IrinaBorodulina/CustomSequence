@@ -4,6 +4,7 @@ import com.github.tomakehurst.wiremock.WireMockServer;
 import com.github.tomakehurst.wiremock.client.WireMock;
 import org.json.JSONObject;
 import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
@@ -14,8 +15,9 @@ import org.springframework.test.web.reactive.server.WebTestClient;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.request.MockMvcRequestBuilders;
 
-import static com.github.tomakehurst.wiremock.client.WireMock.aResponse;
-import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
+import static com.github.tomakehurst.wiremock.client.WireMock.*;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 /**
  * WireMockServer вместе с тестовыми application.properties конфигурируется в отдельном классе WireMockInitializer.
@@ -67,10 +69,15 @@ class WireMockControllerWithInitializerTest {
                 .jsonPath("$.length()")
                 .isEqualTo(2);
 
+        wireMockServer.verify(exactly(1), getRequestedFor(urlEqualTo("/fact")));
+
         this.mockMvc
                 .perform(MockMvcRequestBuilders.get("/api/wiremock"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.fact").value("1"))
                 .andExpect(jsonPath("$.length").value("1"));
+
+        Assertions.assertEquals(2, wireMockServer.getAllServeEvents().size());
+        Assertions.assertEquals(0, wireMockServer.findAllUnmatchedRequests().size());
     }
 }
