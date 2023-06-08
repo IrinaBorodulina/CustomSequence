@@ -15,8 +15,12 @@ import org.springframework.http.MediaType;
 import org.springframework.test.context.DynamicPropertyRegistry;
 import org.springframework.test.context.DynamicPropertySource;
 import org.springframework.test.web.reactive.server.WebTestClient;
+import org.springframework.test.web.servlet.MockMvc;
+import org.springframework.test.web.servlet.request.MockMvcRequestBuilders;
 
 import static com.github.tomakehurst.wiremock.client.WireMock.aResponse;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 
 /**
@@ -26,13 +30,13 @@ import static com.github.tomakehurst.wiremock.client.WireMock.aResponse;
 @AutoConfigureMockMvc
 class WireMockControllerTest {
 
-    private static WireMockServer wireMockServer;
+    @Autowired
     private WebTestClient webTestClient;
 
     @Autowired
-    public WireMockControllerTest(WebTestClient webTestClient) {
-        this.webTestClient = webTestClient;
-    }
+    private MockMvc mockMvc;
+
+    private static WireMockServer wireMockServer;
 
     @DynamicPropertySource
     static void dynamicProperties(DynamicPropertyRegistry registry) {
@@ -56,7 +60,7 @@ class WireMockControllerTest {
     }
 
     @Test
-    void get() {
+    void get() throws Exception {
         JSONObject body = new JSONObject("{\"fact\": 1,\"length\": 1}");
         wireMockServer.stubFor(
                 WireMock.get("/fact")
@@ -80,5 +84,11 @@ class WireMockControllerTest {
                 .isEqualTo("1")
                 .jsonPath("$.length()")
                 .isEqualTo(2);
+
+        this.mockMvc
+                .perform(MockMvcRequestBuilders.get("/api/wiremock"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.fact").value("1"))
+                .andExpect(jsonPath("$.length").value("1"));
     }
 }

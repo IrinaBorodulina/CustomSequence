@@ -4,19 +4,18 @@ import com.github.tomakehurst.wiremock.WireMockServer;
 import com.github.tomakehurst.wiremock.client.WireMock;
 import org.json.JSONObject;
 import org.junit.jupiter.api.AfterEach;
-import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
 import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.web.reactive.server.WebTestClient;
-import org.springframework.web.reactive.function.client.WebClient;
+import org.springframework.test.web.servlet.MockMvc;
+import org.springframework.test.web.servlet.request.MockMvcRequestBuilders;
 
 import static com.github.tomakehurst.wiremock.client.WireMock.aResponse;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
 /**
  * WireMockServer вместе с тестовыми application.properties конфигурируется в отдельном классе WireMockInitializer.
@@ -27,15 +26,15 @@ import static com.github.tomakehurst.wiremock.client.WireMock.aResponse;
 @AutoConfigureMockMvc
 class WireMockControllerWithInitializerTest {
 
+    @Autowired
     private WireMockServer wireMockServer;
+
+    @Autowired
     private WebTestClient webTestClient;
 
     @Autowired
-    public WireMockControllerWithInitializerTest(WireMockServer wireMockServer,
-                                                 WebTestClient webTestClient) {
-        this.wireMockServer = wireMockServer;
-        this.webTestClient = webTestClient;
-    }
+    private MockMvc mockMvc;
+
 
     @AfterEach
     void afterEach() {
@@ -43,7 +42,7 @@ class WireMockControllerWithInitializerTest {
     }
 
     @Test
-    void get() {
+    void get() throws Exception {
         JSONObject body = new JSONObject("{\"fact\": 1,\"length\": 1}");
         wireMockServer.stubFor(
                 WireMock.get("/fact")
@@ -67,5 +66,11 @@ class WireMockControllerWithInitializerTest {
                 .isEqualTo("1")
                 .jsonPath("$.length()")
                 .isEqualTo(2);
+
+        this.mockMvc
+                .perform(MockMvcRequestBuilders.get("/api/wiremock"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.fact").value("1"))
+                .andExpect(jsonPath("$.length").value("1"));
     }
 }
